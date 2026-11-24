@@ -1,0 +1,24 @@
+{
+  "url": "https://questlog.gg/throne-and-liberty/en/auction-house/potentials",
+  "api_base": "https://questlog.gg/throne-and-liberty/api/trpc/auctionHouse.",
+  "region": "EU",
+  "region_key": "eu-f",
+  "targets": [
+    {
+      "potential_name": "Astral Overseer Enchant",
+      "variant": "Skill Enchant",
+      "internal_id": "SkillSet_WP_Item_Gear_ORB_16",
+      "kind": "skill-enchant",
+      "max_price_ping": null
+    }
+  ],
+  "browser": {
+    "headless": true,
+    "timeout_ms": 30000,
+    "post_click_wait_ms": 2500
+  },
+  "retry": {
+    "max_attempts": 3,
+    "delay_seconds": 10
+  }
+}
