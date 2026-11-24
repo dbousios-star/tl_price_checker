@@ -10,7 +10,6 @@ import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from urllib.parse import quote
 
 import requests
 from dotenv import load_dotenv
@@ -79,22 +78,6 @@ def unwrap_trpc(payload):
     return data
 
 
-def fetch_via_api(cfg: dict) -> dict:
-    base = cfg["api_base"]
-    headers = {"User-Agent": USER_AGENT, "Accept": "application/json", "Referer": cfg["url"]}
-    timeout = cfg["browser"]["timeout_ms"] / 1000
-    urls = {
-        "abilities": base + "getPotentialAbilities?input=" + quote(json.dumps({"language": "en"}, separators=(",", ":"))),
-        "board": base + "getPotentialsBoard",
-    }
-    out = {}
-    for name, url in urls.items():
-        r = requests.get(url, headers=headers, timeout=timeout)
-        r.raise_for_status()
-        out[name] = r.json()
-    return out
-
-
 def fetch_via_browser(cfg: dict, headed: bool = False) -> dict:
     from playwright.sync_api import sync_playwright
 
@@ -140,13 +123,8 @@ def with_retries(fn, attempts: int, delay: float, label: str):
     raise FetchError(f"{label} failed after {attempts} attempts: {last}")
 
 
-def fetch_data(cfg: dict, force_browser: bool, headed: bool) -> tuple[dict, str]:
+def fetch_data(cfg: dict, headed: bool) -> tuple[dict, str]:
     r = cfg["retry"]
-    if not (force_browser or headed):
-        try:
-            return with_retries(lambda: fetch_via_api(cfg), r["max_attempts"], r["delay_seconds"], "API"), "api"
-        except FetchError as e:
-            log.warning("%s -> falling back to browser", e)
     return with_retries(lambda: fetch_via_browser(cfg, headed), r["max_attempts"], r["delay_seconds"], "Browser"), "browser"
 
 
@@ -326,10 +304,9 @@ def send_test_alert(cfg: dict) -> None:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="TL EU potential price checker")
-    ap.add_argument("--headed", action="store_true", help="use a visible browser (forces browser path)")
+    ap.add_argument("--headed", action="store_true", help="use a visible browser window")
     ap.add_argument("--debug", action="store_true", help="dump raw data; no DB writes or alerts")
     ap.add_argument("--test-alert", action="store_true", help="send a test Discord embed and exit")
-    ap.add_argument("--force-browser", action="store_true", help="skip the API and use headless Playwright")
     args = ap.parse_args()
 
     setup_logging()
@@ -341,7 +318,7 @@ def main() -> int:
             send_test_alert(cfg)
             return 0
 
-        raw, source = fetch_data(cfg, args.force_browser, args.headed)
+        raw, source = fetch_data(cfg, args.headed)
         results = [(t, *extract(raw, t, cfg["region_key"])) for t in cfg["targets"]]
 
         if args.debug:

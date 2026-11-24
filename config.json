@@ -1,6 +1,5 @@
 {
   "url": "https://questlog.gg/throne-and-liberty/en/auction-house/potentials",
-  "api_base": "https://questlog.gg/throne-and-liberty/api/trpc/auctionHouse.",
   "region": "EU",
   "region_key": "eu-f",
   "targets": [
